@@ -36,6 +36,11 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
         ],
       },
     },
+    web: {
+      ...config.web,
+      // Configure proxy for web development to avoid CORS issues
+      bundler: "metro",
+    },
     plugins: [...existingPlugins],
   }
 }

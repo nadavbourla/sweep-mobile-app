@@ -1,11 +1,14 @@
-import { FC } from "react"
+import { FC, useEffect, useState } from "react"
 import { ScrollView, TextStyle, View, ViewStyle } from "react-native"
 
 import { Button } from "@/components/Button"
 import { Icon } from "@/components/Icon"
+import { ScanModal } from "@/components/ScanModal"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import type { AppStackScreenProps } from "@/navigators/navigationTypes"
+import { investigateApi } from "@/services/api/investigateApi"
+import type { GetIndicesCountersParams, IndicesCountersData } from "@/services/api/investigateApi"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -69,6 +72,39 @@ export const SecurityReportScreen: FC<SecurityReportScreenProps> = ({ navigation
   const mediumCount = breaches.filter((b) => b.severity === "MEDIUM").length
   const lowCount = breaches.filter((b) => b.severity === "LOW").length
 
+  const [isScanModalVisible, setIsScanModalVisible] = useState(false)
+  const [indicesCounters, setIndicesCounters] = useState<IndicesCountersData | null>(null)
+
+  useEffect(() => {
+    const loadIndicesCounters = async () => {
+      try {
+        const params: GetIndicesCountersParams = {
+          query: email,
+          entity: "emails",
+        }
+
+        const result = await investigateApi.getIndicesCounters(params)
+        if (result.kind === "ok") {
+          setIndicesCounters(result.data.data)
+        }
+      } catch (e) {
+        if (__DEV__ && e instanceof Error) {
+          console.error("Failed to load indices counters:", e)
+        }
+      }
+    }
+
+    loadIndicesCounters()
+  }, [email])
+
+  const handleScanComplete = (scannedEmail: string) => {
+    setIsScanModalVisible(false)
+    // Optionally navigate or update state with scan results
+    if (scannedEmail) {
+      // You can update the email or trigger a refresh here
+    }
+  }
+
   return (
     <Screen
       preset="auto"
@@ -95,7 +131,7 @@ export const SecurityReportScreen: FC<SecurityReportScreenProps> = ({ navigation
             text="New Scan"
             style={themed($newScanButton)}
             textStyle={themed($newScanButtonText)}
-            onPress={() => navigation.navigate("EmailEntry")}
+            onPress={() => setIsScanModalVisible(true)}
           />
         </View>
 
@@ -186,7 +222,37 @@ export const SecurityReportScreen: FC<SecurityReportScreenProps> = ({ navigation
             </View>
           )
         })}
+
+        {/* Indices Counters Section */}
+        {indicesCounters && (
+          <View style={themed($indicesSection)}>
+            <Text text="Data Sources" style={themed($sectionTitle)} />
+            <View style={themed($indicesContainer)}>
+              {indicesCounters.indices.map((index) => (
+                <View key={index.name} style={themed($indexCard)}>
+                  <Text text={index.name.replace(/_/g, " ")} style={themed($indexName)} />
+                  <Text text={`${index.counter}`} style={themed($indexCounter)} />
+                </View>
+              ))}
+            </View>
+            {indicesCounters.license && (
+              <View style={themed($licenseInfo)}>
+                <Text
+                  text={`License: ${indicesCounters.license.counter} / ${indicesCounters.license.limit} (${indicesCounters.license.time_frame})`}
+                  style={themed($licenseText)}
+                />
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
+
+      {/* Scan Modal */}
+      <ScanModal
+        visible={isScanModalVisible}
+        onClose={() => setIsScanModalVisible(false)}
+        onScanComplete={handleScanComplete}
+      />
     </Screen>
   )
 }
@@ -530,4 +596,54 @@ const $compromisedDataBadgeText: ThemedStyle<TextStyle> = ({ typography }) => ({
   fontSize: 12,
   fontFamily: typography.primary.normal,
   color: "#374151",
+})
+
+const $indicesSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginTop: spacing.xl,
+})
+
+const $indicesContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  flexWrap: "wrap",
+  gap: spacing.md,
+  marginBottom: spacing.md,
+})
+
+const $indexCard: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  backgroundColor: colors.palette.neutral200 || "#FFFFFF",
+  borderRadius: 8,
+  padding: spacing.md,
+  minWidth: "45%",
+  borderWidth: 1,
+  borderColor: colors.palette.neutral400 || "#E5E7EB",
+})
+
+const $indexName: ThemedStyle<TextStyle> = ({ typography, spacing }) => ({
+  fontSize: 14,
+  fontFamily: typography.primary.medium,
+  color: "#374151",
+  marginBottom: spacing.xs,
+  fontWeight: "600",
+  textTransform: "capitalize",
+})
+
+const $indexCounter: ThemedStyle<TextStyle> = ({ typography }) => ({
+  fontSize: 20,
+  fontFamily: typography.primary.bold,
+  color: "#111827",
+  fontWeight: "700",
+})
+
+const $licenseInfo: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  backgroundColor: colors.palette.neutral200 || "#F3F4F6",
+  borderRadius: 8,
+  padding: spacing.md,
+  marginTop: spacing.md,
+})
+
+const $licenseText: ThemedStyle<TextStyle> = ({ typography }) => ({
+  fontSize: 14,
+  fontFamily: typography.primary.medium,
+  color: "#374151",
+  fontWeight: "600",
 })
