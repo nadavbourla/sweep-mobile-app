@@ -9,8 +9,11 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
 import Config from "@/config"
 import { useAuth } from "@/context/AuthContext"
+import { EmailEntryScreen } from "@/screens/EmailEntryScreen"
+import { EmailVerificationScreen } from "@/screens/EmailVerificationScreen"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { LoginScreen } from "@/screens/LoginScreen"
+import { SecurityReportScreen } from "@/screens/SecurityReportScreen"
 import { WelcomeScreen } from "@/screens/WelcomeScreen"
 import { useAppTheme } from "@/theme/context"
 
@@ -54,6 +57,9 @@ const AppStack = () => {
       ) : (
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="EmailEntry" component={EmailEntryScreen} />
+          <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
+          <Stack.Screen name="SecurityReport" component={SecurityReportScreen} />
         </>
       )}
 

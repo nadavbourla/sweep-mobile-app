@@ -1,0 +1,347 @@
+---
+alwaysApply: true
+---
+# React Native Coding Standards - PizzaApp
+
+This document outlines the coding standards and best practices for this React Native/Expo project.
+
+## Table of Contents
+1. [Project Structure](#project-structure)
+2. [TypeScript Standards](#typescript-standards)
+3. [Component Standards](#component-standards)
+4. [Styling Standards](#styling-standards)
+5. [Navigation Standards](#navigation-standards)
+6. [Import Organization](#import-organization)
+7. [Naming Conventions](#naming-conventions)
+8. [Code Organization](#code-organization)
+
+## Project Structure
+
+```
+app/
+├── components/       # Reusable UI components
+├── screens/          # Screen components
+├── navigators/       # Navigation configuration
+├── context/          # React Context providers
+├── services/         # API and business logic
+├── theme/            # Theme configuration and styles
+├── utils/            # Utility functions
+├── i18n/             # Internationalization
+└── config/           # App configuration
+```
+
+## TypeScript Standards
+
+### Strict Mode
+- Always use TypeScript strict mode
+- No `any` types unless absolutely necessary (use `unknown` first)
+- Use proper type definitions for all props, state, and functions
+
+### Type Definitions
+```typescript
+// ✅ Good
+interface ScreenProps extends AppStackScreenProps<"ScreenName"> {}
+
+// ❌ Bad
+interface ScreenProps {
+  navigation: any
+  route: any
+}
+```
+
+### Function Components
+- Always use `FC` (Function Component) type from React
+- Use named function exports for components
+```typescript
+// ✅ Good
+export const MyComponent: FC<MyComponentProps> = ({ prop1, prop2 }) => {
+  // ...
+}
+
+// ❌ Bad
+export default function MyComponent(props: any) {
+  // ...
+}
+```
+
+## Component Standards
+
+### Screen Components
+- All screens must use the `Screen` component wrapper
+- Use `preset="auto"` for scrollable content
+- Always specify `safeAreaEdges`
+- Use `backgroundColor` prop for screen background
+
+```typescript
+<Screen
+  preset="auto"
+  contentContainerStyle={themed($screenContentContainer)}
+  safeAreaEdges={["top", "bottom"]}
+  backgroundColor={colors.palette.neutral100}
+>
+```
+
+### Component Structure
+1. Imports (external, then internal)
+2. Type/Interface definitions
+3. Component function
+4. Style definitions (at bottom of file)
+
+### Props Destructuring
+- Always destructure props in function signature
+- Use navigation and route from props when needed
+
+```typescript
+// ✅ Good
+export const MyScreen: FC<MyScreenProps> = ({ navigation, route }) => {
+  const email = route.params?.email
+}
+
+// ❌ Bad
+export const MyScreen: FC<MyScreenProps> = (props) => {
+  const email = props.route.params?.email
+}
+```
+
+## Styling Standards
+
+### Themed Styles
+- Always use `ThemedStyle` type for style definitions
+- Use `themed()` function to apply styles
+- Style definitions must be at the bottom of the file
+- Use `$` prefix for style constant names
+
+```typescript
+// ✅ Good
+const $container: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  padding: spacing.lg,
+  backgroundColor: colors.palette.neutral100,
+})
+
+// ❌ Bad
+const containerStyle = {
+  padding: 24,
+  backgroundColor: '#FFFFFF',
+}
+```
+
+### Style Naming
+- Use descriptive names with `$` prefix
+- Follow pattern: `$elementPurpose` (e.g., `$headerContainer`, `$submitButton`)
+- Group related styles together
+
+### Spacing and Colors
+- Always use theme spacing values: `spacing.xs`, `spacing.sm`, `spacing.md`, etc.
+- Always use theme colors: `colors.palette.neutral100`, `colors.text`, etc.
+- Never hardcode spacing or color values
+
+```typescript
+// ✅ Good
+marginBottom: spacing.lg,
+color: colors.palette.neutral800,
+
+// ❌ Bad
+marginBottom: 24,
+color: '#191015',
+```
+
+### Style Parameters
+- Always destructure needed theme properties: `({ spacing })`, `({ colors })`, `({ typography })`
+- Include all used properties in destructuring
+
+```typescript
+// ✅ Good
+const $text: ThemedStyle<TextStyle> = ({ typography, spacing, colors }) => ({
+  fontSize: typography.primary.normal,
+  marginBottom: spacing.md,
+  color: colors.text,
+})
+
+// ❌ Bad - missing spacing parameter
+const $text: ThemedStyle<TextStyle> = ({ typography }) => ({
+  fontSize: typography.primary.normal,
+  marginBottom: spacing.md, // ERROR: spacing not defined
+})
+```
+
+## Navigation Standards
+
+### Navigation Types
+- Always extend `AppStackScreenProps<"ScreenName">` for screen props
+- Define screen params in `navigationTypes.ts`
+- Use proper TypeScript types for route params
+
+```typescript
+// navigationTypes.ts
+export type AppStackParamList = {
+  MyScreen: { email?: string }
+}
+
+// Screen component
+interface MyScreenProps extends AppStackScreenProps<"MyScreen"> {}
+```
+
+### Navigation Usage
+- Access route params: `route.params?.paramName`
+- Navigate with typed params: `navigation.navigate("ScreenName", { param: value })`
+- Use `navigation.goBack()` for back navigation
+
+## Import Organization
+
+### Import Order
+1. React and React Native imports
+2. Third-party libraries
+3. Internal imports (using `@/` alias)
+4. Types (if separate)
+
+### Import Grouping
+- Group imports with blank lines between groups
+- Use absolute imports with `@/` alias for app code
+- Use `@assets/` alias for assets
+
+```typescript
+// ✅ Good
+import { FC, useState } from "react"
+import { ScrollView, View, ViewStyle } from "react-native"
+
+import { Button } from "@/components/Button"
+import { Screen } from "@/components/Screen"
+import { Text } from "@/components/Text"
+import type { AppStackScreenProps } from "@/navigators/navigationTypes"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
+```
+
+## Naming Conventions
+
+### Files and Components
+- **Screens**: PascalCase with "Screen" suffix (e.g., `LoginScreen.tsx`)
+- **Components**: PascalCase (e.g., `Button.tsx`)
+- **Utils**: camelCase (e.g., `formatDate.ts`)
+- **Types**: PascalCase (e.g., `navigationTypes.ts`)
+
+### Variables and Functions
+- **Components**: PascalCase (e.g., `const MyComponent`)
+- **Functions**: camelCase (e.g., `const handleSubmit`)
+- **Constants**: UPPER_SNAKE_CASE for true constants, camelCase for styled constants
+- **Styles**: `$` prefix + camelCase (e.g., `$containerStyle`)
+
+### Props Interfaces
+- Use `ComponentNameProps` pattern (e.g., `LoginScreenProps`)
+
+## Code Organization
+
+### Component File Structure
+```typescript
+// 1. Imports
+import ...
+
+// 2. Type definitions
+interface ComponentProps extends ...
+
+// 3. Component function
+export const Component: FC<ComponentProps> = ({ ... }) => {
+  // Hooks
+  const { themed, theme } = useAppTheme()
+  
+  // State
+  const [state, setState] = useState()
+  
+  // Effects
+  useEffect(() => { ... }, [])
+  
+  // Handlers
+  const handleAction = () => { ... }
+  
+  // Render
+  return (...)
+}
+
+// 4. Style definitions (at bottom)
+const $style: ThemedStyle<ViewStyle> = ({ spacing }) => ({ ... })
+```
+
+### State Management
+- Use `useState` for local component state
+- Use Context for global state (AuthContext, ThemeContext)
+- Keep state as close to where it's used as possible
+
+### Hooks Usage
+- Always use `useAppTheme()` for theme access
+- Destructure `themed` function and `theme` object
+- Access `spacing`, `colors`, `typography` from `theme`
+
+```typescript
+const {
+  themed,
+  theme: { colors, spacing, typography },
+} = useAppTheme()
+```
+
+## Best Practices
+
+### Performance
+- Use `useMemo` for expensive computations
+- Use `useCallback` for functions passed to child components
+- Avoid inline style objects in render
+
+### Accessibility
+- Use semantic components (`Button`, `Text`, etc.)
+- Add `testID` props for testing
+- Use proper accessibility labels
+
+### Error Handling
+- Always handle edge cases (undefined params, empty arrays, etc.)
+- Use optional chaining: `route.params?.email`
+- Provide default values: `route.params?.email || "default@email.com"`
+
+### Code Comments
+- Use comments for complex logic, not obvious code
+- Use JSDoc comments for exported functions/components
+- Keep comments up-to-date with code changes
+
+## Common Patterns
+
+### Conditional Rendering
+```typescript
+// ✅ Good
+{isValid && <View>...</View>}
+{items.length > 0 && items.map(...)}
+
+// ❌ Bad
+{isValid ? <View>...</View> : null}
+```
+
+### List Rendering
+```typescript
+// ✅ Good
+{items.map((item, index) => (
+  <View key={item.id || index}>
+    ...
+  </View>
+))}
+```
+
+### Style Application
+```typescript
+// ✅ Good
+<View style={themed($container)}>
+<View style={[themed($baseStyle), themed($variantStyle)]}>
+
+// ❌ Bad
+<View style={{ padding: 20 }}>
+```
+
+## Linting and Formatting
+
+- Run `npm run lint` before committing
+- Follow ESLint rules defined in `.eslintrc.js`
+- Use Prettier for code formatting
+- Fix all linting errors before submitting code
+
+## Testing
+
+- Add `testID` props to interactive elements
+- Write tests for complex logic
+- Test edge cases and error scenarios
+
